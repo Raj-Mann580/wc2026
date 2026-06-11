@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 — Staff Predictor</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.8.0/dist/tabler-icons.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --navy:#0A1F44;--navy2:#132952;--navy3:#1E3A6E;
+  --gold:#C9A84C;--gold2:#F0D080;
+  --red:#C8102E;
+  --green3:#4CD88A;
+  --s1:rgba(255,255,255,0.06);--s2:rgba(255,255,255,0.11);
+  --b1:rgba(255,255,255,0.10);--b2:rgba(255,255,255,0.22);--bg:rgba(201,168,76,0.4);
+  --t1:#F5F0E8;--t2:#B8C4D8;--t3:#6A80A0;
+  --r:8px;--rl:13px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:var(--t1);background:var(--navy);min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(201,168,76,0.13) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 95% 105%,rgba(200,16,46,0.08) 0%,transparent 60%)}
+.hdr{background:rgba(10,31,68,0.97);border-bottom:1px solid var(--bg);padding:.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.hdr-l{display:flex;align-items:center;gap:11px}
+.tbadge{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;outline:2px solid rgba(201,168,76,0.3);outline-offset:2px}
+.aname{font-size:17px;font-weight:700;color:var(--t1);letter-spacing:-.01em}
+.asub{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.spill{display:flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid var(--b1);background:var(--s1);color:var(--t3)}
+.spill.live{border-color:rgba(76,216,138,0.4);background:rgba(76,216,138,0.1);color:var(--green3)}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.uchip{display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--bg);border-radius:20px;padding:3px 11px 3px 4px;font-size:12px;color:var(--t2)}
+.av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--red));color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.obtn{padding:4px 11px;background:transparent;border:1px solid var(--b1);border-radius:var(--r);font-size:12px;color:var(--t3);cursor:pointer;transition:all .15s}
+.obtn:hover{border-color:var(--b2);color:var(--t1)}
+.shell{max-width:960px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+.pg{display:none}.pg.on{display:block}
+.lwrap{max-width:400px;margin:2rem auto}
+.lhero{text-align:center;margin-bottom:1.75rem}
+.ltrophy{font-size:56px;line-height:1;margin-bottom:.65rem;display:block}
+.ltitle{font-size:25px;font-weight:800;color:var(--gold2);letter-spacing:-.02em;margin-bottom:.3rem}
+.lsub{font-size:13px;color:var(--t2);line-height:1.55}
+.lcard{background:var(--navy2);border:1px solid var(--bg);border-radius:var(--rl);padding:1.6rem}
+.lct{font-size:15px;font-weight:700;margin-bottom:.25rem}
+.lcs{font-size:13px;color:var(--t2);margin-bottom:1.1rem;line-height:1.5}
+.flbl{display:block;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;margin-top:.85rem}
+.finp{width:100%;padding:9px 13px;font-size:14px;border:1px solid var(--b2);border-radius:var(--r);background:rgba(255,255,255,0.05);color:var(--t1);transition:border-color .15s,box-shadow .15s}
+.finp::placeholder{color:var(--t3)}
+.finp:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.15)}
+.hint{font-size:11px;color:var(--t3);margin-top:4px;line-height:1.4}
+.btn-gold{width:100%;padding:11px;margin-top:1.1rem;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));color:#0A1F44;border:none;border-radius:var(--r);font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s}
+.btn-gold:hover{opacity:.88}
+.btn-action{padding:9px 20px;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));color:#0A1F44;border:none;border-radius:var(--r);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .15s}
+.btn-action:hover{opacity:.88}
+.btn-ghost{padding:7px 14px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);font-size:12px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .12s}
+.btn-ghost:hover{background:var(--s2);color:var(--t1)}
+.fok{font-size:13px;color:var(--green3);display:none;align-items:center;gap:5px}
+.fer{font-size:13px;color:#FF7090;display:none;align-items:center;gap:5px}
+.alert-gold{background:rgba(201,168,76,0.1);border:1px solid var(--bg);border-radius:var(--r);padding:.6rem 1rem;font-size:13px;color:var(--gold2);margin-bottom:1rem;display:flex;align-items:center;gap:7px}
+.nav{display:flex;gap:4px;flex-wrap:wrap;background:var(--navy2);border:1px solid var(--bg);border-radius:var(--rl);padding:5px;margin-bottom:1.25rem}
+.nb{padding:7px 15px;font-size:12px;font-weight:500;border:none;border-radius:var(--r);background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.nb:hover{background:var(--s1);color:var(--t2)}
+.nb.on{background:linear-gradient(135deg,var(--gold),var(--gold2),var(--gold));color:#0A1F44;font-weight:800}
+.nb i{font-size:14px}
+.istrip{background:var(--navy2);border:1px solid var(--b1);border-radius:var(--r);padding:.6rem 1rem;font-size:13px;color:var(--t2);margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.ptag{display:flex;align-items:center;gap:5px}
+.pnum{font-size:15px;font-weight:800;color:var(--gold2)}
+.pdiv{width:1px;height:16px;background:var(--b2)}
+.ppr{margin-left:auto;font-size:12px;color:var(--t3)}
+.ppr strong{color:var(--gold2)}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(292px,1fr));gap:9px;margin-bottom:1.1rem}
+.gc{background:var(--navy2);border:1px solid var(--b1);border-radius:var(--rl);padding:.85rem;transition:border-color .15s}
+.gc:hover{border-color:var(--bg)}
+.glbl{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px;color:var(--gold);display:flex;align-items:center;gap:6px}
+.glbl::before{content:'';display:inline-block;width:3px;height:11px;background:var(--gold);border-radius:2px}
+.mr{display:grid;grid-template-columns:1fr 36px 13px 36px 1fr;align-items:center;gap:3px;margin-bottom:5px}
+.mr:last-child{margin-bottom:0}
+.tn{font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn.r{text-align:right}
+.vs{font-size:10px;color:var(--t3);text-align:center}
+.si{width:36px;text-align:center;padding:4px 2px;font-size:13px;font-weight:700;border:1px solid var(--b2);border-radius:5px;background:rgba(255,255,255,0.04);color:var(--t1)}
+.si:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,0.18)}
+.si::placeholder{color:var(--t3);font-weight:400}
+.si.filled{background:rgba(201,168,76,0.12);border-color:rgba(201,168,76,0.5);color:var(--gold2)}
+.si.locked{opacity:.4;pointer-events:none}
+.actbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:1.1rem}
+.scard{background:var(--navy2);border:1px solid var(--b1);border-radius:var(--rl);padding:.8rem 1rem}
+.slbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.sval{font-size:22px;font-weight:800;color:var(--gold2)}
+.ssub{font-size:11px;color:var(--t3);margin-top:2px}
+.pbar{height:3px;background:var(--b2);border-radius:2px;margin-top:6px}
+.pfill{height:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px}
+.tsrow{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.8rem}
+.tstxt{font-size:12px;color:var(--t3)}
+.lbwrap{background:var(--navy2);border:1px solid var(--bg);border-radius:var(--rl);overflow:hidden}
+.lbhd{display:grid;grid-template-columns:44px minmax(0,1fr) 64px 52px 52px 64px;gap:6px;padding:9px 14px;font-size:10px;font-weight:800;color:var(--gold);border-bottom:1px solid var(--bg);background:rgba(201,168,76,0.07);text-transform:uppercase;letter-spacing:.06em}
+.lbr{display:grid;grid-template-columns:44px minmax(0,1fr) 64px 52px 52px 64px;gap:6px;padding:11px 14px;font-size:13px;border-bottom:1px solid var(--b1);align-items:center;cursor:pointer;transition:background .12s}
+.lbr:last-child{border-bottom:none}
+.lbr:hover{background:var(--s1)}
+.lbr.me{background:rgba(201,168,76,0.08)}
+.lbr.p1{background:rgba(201,168,76,0.14)}
+.lbr.p2{background:rgba(180,180,200,0.05)}
+.lbr.p3{background:rgba(180,120,60,0.07)}
+.rkcell{text-align:center;font-size:17px}
+.ptcell{text-align:center;font-size:18px;font-weight:800;color:var(--gold2)}
+.subcell{text-align:center}
+.bdg{display:inline-block;padding:2px 8px;border-radius:9px;font-size:11px;font-weight:700}
+.bg{background:rgba(201,168,76,0.18);color:var(--gold2);border:1px solid rgba(201,168,76,0.3)}
+.bb{background:rgba(56,138,221,0.2);color:#90C0F8;border:1px solid rgba(56,138,221,0.35)}
+.bgr{background:var(--s1);color:var(--t3);border:1px solid var(--b1)}
+.scgrp{background:var(--navy2);border:1px solid var(--b1);border-radius:var(--rl);padding:.85rem;margin-bottom:9px}
+.scgrp:hover{border-color:var(--bg)}
+.scm{display:grid;grid-template-columns:1fr 64px 54px 40px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--b1);font-size:12px}
+.scm:last-child{border-bottom:none}
+.empty{padding:2.5rem;text-align:center;color:var(--t3);font-size:13px}
+.empty i{font-size:30px;margin-bottom:.5rem;display:block}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--b2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:580px){
+  .lbhd,.lbr{grid-template-columns:38px minmax(0,1fr) 54px 44px 44px}
+  .lbhd>:last-child,.lbr>:last-child{display:none}
+  .ggrid{grid-template-columns:1fr}
+  .sgrid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="tbadge">🏆</div>
+    <div>
+      <div class="aname">World Cup 2026 Predictor</div>
+      <div class="asub">USA · Canada · Mexico · Staff Competition</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div id="sp" class="spill"><div class="sdot"></div><span>connecting…</span></div>
+    <div id="uc" style="display:none"></div>
+    <button id="ob" class="obtn" style="display:none" onclick="doLogout()">Sign out</button>
+  </div>
+</div>
+
+<div class="shell">
+
+  <div id="pg-login" class="pg on">
+    <div class="lwrap">
+      <div class="lhero">
+        <span class="ltrophy">🏆</span>
+        <div class="ltitle">World Cup 2026</div>
+        <div class="lsub">Predict every group stage score · compete with your whole team · win bragging rights all summer</div>
+      </div>
+      <div class="lcard">
+        <div class="lct">Join the competition</div>
+        <div class="lcs">Enter your name and a 4-digit PIN. Your predictions are saved to a shared live leaderboard the whole team can see.</div>
+        <label class="flbl" for="ln">Your name</label>
+        <input class="finp" id="ln" placeholder="e.g. Sarah Jones" autocomplete="off"/>
+        <label class="flbl" for="lp">Your 4-digit PIN (protects your entry)</label>
+        <input class="finp" id="lp" type="password" placeholder="e.g. 1234" maxlength="4" autocomplete="off"/>
+        <label class="flbl" for="la">Organiser PIN <span style="font-weight:400;color:var(--t3)">(players leave blank)</span></label>
+        <input class="finp" id="la" type="password" placeholder="leave blank" maxlength="12" autocomplete="off"/>
+        <div class="hint">The organiser PIN unlocks the Results tab to enter official scores after each matchday.</div>
+        <button class="btn-gold" onclick="doLogin()"><i class="ti ti-door-enter"></i> Enter predictor</button>
+        <div id="lerr" class="fer" style="margin-top:.75rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pg-app" class="pg">
+    <div class="nav">
+      <button class="nb on" data-p="predict" onclick="go(this,'predict')"><i class="ti ti-pencil"></i> My predictions</button>
+      <button class="nb" data-p="lb" onclick="go(this,'lb')"><i class="ti ti-trophy"></i> Leaderboard</button>
+      <button class="nb" data-p="card" onclick="go(this,'card')"><i class="ti ti-list-details"></i> My scorecard</button>
+      <button class="nb" id="atab" data-p="admin" onclick="go(this,'admin')" style="display:none"><i class="ti ti-shield-check"></i> Results (admin)</button>
+    </div>
+
+    <div id="sub-predict" class="pg on">
+      <div class="istrip">
+        <div class="ptag"><span class="pnum">3</span><span style="font-size:12px">pts exact score</span></div>
+        <div class="pdiv"></div>
+        <div class="ptag"><span class="pnum">1</span><span style="font-size:12px">pt correct result</span></div>
+        <div class="pdiv"></div>
+        <div class="ptag"><span class="pnum">0</span><span style="font-size:12px">pts wrong</span></div>
+        <div class="ppr" id="pp"><strong>0</strong> / 72 predicted</div>
+      </div>
+      <div id="pgrid" class="ggrid"></div>
+      <div class="actbar">
+        <button class="btn-action" onclick="savePreds()"><i class="ti ti-device-floppy"></i> Save my predictions</button>
+        <div id="pok" class="fok"></div>
+        <div id="perr" class="fer"></div>
+      </div>
+    </div>
+
+    <div id="sub-lb" class="pg">
+      <div id="lbsg" class="sgrid"></div>
+      <div class="tsrow">
+        <div id="lbts" class="tstxt"></div>
+        <button class="btn-ghost" onclick="renderLB()"><i class="ti ti-refresh"></i> Refresh</button>
+      </div>
+      <div id="lbbody"></div>
+    </div>
+
+    <div id="sub-card" class="pg">
+      <div id="scsg" class="sgrid"></div>
+      <div id="scbody"></div>
+    </div>
+
+    <div id="sub-admin" class="pg">
+      <div class="alert-gold"><i class="ti ti-lock"></i> Admin only — results entered here lock predictions and update everyone's leaderboard instantly.</div>
+      <div id="agrid" class="ggrid"></div>
+      <div class="actbar">
+        <button class="btn-action" onclick="saveResults()"><i class="ti ti-device-floppy"></i> Save results &amp; update leaderboard</button>
+        <div id="aok" class="fok"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── FIREBASE CONFIG ────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyD-placeholder-not-needed-for-rtdb",
+  databaseURL: "https://wc2026predictor-96226-default-rtdb.firebaseio.com",
+  projectId: "wc2026predictor-96226"
+});
+const db = firebase.database();
+// ──────────────────────────────────────────────────────────────────────────
+
+const GROUPS={A:["Mexico","South Africa","South Korea","Czechia"],B:["Canada","Bosnia and Herzegovina","Qatar","Switzerland"],C:["Brazil","Morocco","Haiti","Scotland"],D:["United States","Paraguay","Australia","Türkiye"],E:["Germany","Curaçao","Côte d'Ivoire","Ecuador"],F:["Netherlands","Japan","Sweden","Tunisia"],G:["Belgium","Egypt","IR Iran","New Zealand"],H:["Spain","Cabo Verde","Saudi Arabia","Uruguay"],I:["France","Senegal","Iraq","Norway"],J:["Argentina","Algeria","Austria","Jordan"],K:["Portugal","Congo DR","Uzbekistan","Colombia"],L:["England","Croatia","Ghana","Panama"]};
+const FLAGS={Mexico:'🇲🇽','South Africa':'🇿🇦','South Korea':'🇰🇷',Czechia:'🇨🇿',Canada:'🇨🇦','Bosnia and Herzegovina':'🇧🇦',Qatar:'🇶🇦',Switzerland:'🇨🇭',Brazil:'🇧🇷',Morocco:'🇲🇦',Haiti:'🇭🇹',Scotland:'🏴󠁧󠁢󠁳󠁣󠁴󠁿','United States':'🇺🇸',Paraguay:'🇵🇾',Australia:'🇦🇺','Türkiye':'🇹🇷',Germany:'🇩🇪','Curaçao':'🇨🇼',"Côte d'Ivoire":'🇨🇮',Ecuador:'🇪🇨',Netherlands:'🇳🇱',Japan:'🇯🇵',Sweden:'🇸🇪',Tunisia:'🇹🇳',Belgium:'🇧🇪',Egypt:'🇪🇬','IR Iran':'🇮🇷','New Zealand':'🇳🇿',Spain:'🇪🇸','Cabo Verde':'🇨🇻','Saudi Arabia':'🇸🇦',Uruguay:'🇺🇾',France:'🇫🇷',Senegal:'🇸🇳',Iraq:'🇮🇶',Norway:'🇳🇴',Argentina:'🇦🇷',Algeria:'🇩🇿',Austria:'🇦🇹',Jordan:'🇯🇴',Portugal:'🇵🇹','Congo DR':'🇨🇩',Uzbekistan:'🇺🇿',Colombia:'🇨🇴',England:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',Croatia:'🇭🇷',Ghana:'🇬🇭',Panama:'🇵🇦'};
+
+// ── YOUR ADMIN PIN ─────────────────────────────────────────────────────────
+const ADMIN_PIN = '9876';
+// ──────────────────────────────────────────────────────────────────────────
+
+const fl = t => (FLAGS[t]||'🏳') + ' ';
+const mk = (g,a,b) => `${g}__${a.replace(/[^a-zA-Z0-9]/g,'_')}__${b.replace(/[^a-zA-Z0-9]/g,'_')}`;
+function pairs(t){const m=[];for(let i=0;i<t.length;i++)for(let j=i+1;j<t.length;j++)m.push([t[i],t[j]]);return m}
+function fmtTs(iso){if(!iso)return'never';const d=new Date(iso),n=new Date(),df=Math.floor((n-d)/60000);if(df<1)return'just now';if(df<60)return df+'m ago';if(df<1440)return Math.floor(df/60)+'h ago';return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+function setSP(s){const e=document.getElementById('sp');if(s==='live'){e.className='spill live';e.innerHTML='<div class="sdot"></div><span>live</span>'}else if(s==='sync'){e.className='spill';e.innerHTML='<div class="spinner"></div><span>syncing…</span>'}else{e.className='spill';e.innerHTML='<div class="sdot"></div><span>connecting…</span>'}}
+function showFlash(id,msg){const e=document.getElementById(id);e.innerHTML=`<i class="ti ti-check"></i> ${msg}`;e.style.display='flex';setTimeout(()=>e.style.display='none',3500)}
+function showErr(id,msg){const e=document.getElementById(id);e.innerHTML=`<i class="ti ti-alert-circle"></i> ${msg}`;e.style.display='flex';setTimeout(()=>e.style.display='none',4000)}
+
+let user=null, isAdmin=false, results={}, allPreds={}, players=[], lastUp=null;
+
+// ── FIREBASE LISTENERS ─────────────────────────────────────────────────────
+function startListeners(){
+  // Listen for results changes in real time
+  db.ref('results').on('value', snap => {
+    results = snap.val() || {};
+    renderCurrent();
+  });
+  // Listen for players list
+  db.ref('players').on('value', snap => {
+    players = snap.val() || [];
+    if(typeof players === 'object' && !Array.isArray(players)) players = Object.values(players);
+  });
+  // Listen for last updated
+  db.ref('lastUpdated').on('value', snap => {
+    lastUp = snap.val();
+  });
+  // Listen for all predictions
+  db.ref('preds').on('value', snap => {
+    allPreds = snap.val() || {};
+    renderCurrent();
+  });
+  setSP('live');
+}
+
+async function doLogin(){
+  const name = document.getElementById('ln').value.trim();
+  const pin = document.getElementById('lp').value.trim();
+  const ap = document.getElementById('la').value.trim();
+  if(!name){showErr('lerr','Please enter your name.');return}
+  if(!/^\d{4}$/.test(pin)){showErr('lerr','PIN must be exactly 4 digits.');return}
+  setSP('sync');
+  try {
+    const snap = await db.ref('users/'+name.replace(/[^a-zA-Z0-9]/g,'_')).get();
+    if(snap.exists()){
+      if(snap.val().pin !== pin){showErr('lerr','Wrong PIN for that name. Try again.');setSP('live');return}
+    } else {
+      await db.ref('users/'+name.replace(/[^a-zA-Z0-9]/g,'_')).set({pin, name, joined: new Date().toISOString()});
+      const plSnap = await db.ref('players').get();
+      const pl = plSnap.val() || [];
+      const plArr = Array.isArray(pl) ? pl : Object.values(pl);
+      if(!plArr.includes(name)){plArr.push(name);await db.ref('players').set(plArr)}
+    }
+    isAdmin = ap === ADMIN_PIN;
+    user = name;
+    showApp();
+  } catch(e){
+    showErr('lerr','Connection error. Please try again.');
+    setSP('live');
+  }
+}
+
+function doLogout(){
+  user=null;isAdmin=false;
+  db.ref('results').off();
+  db.ref('players').off();
+  db.ref('preds').off();
+  db.ref('lastUpdated').off();
+  document.getElementById('pg-login').classList.add('on');
+  document.getElementById('pg-app').classList.remove('on');
+  document.getElementById('uc').style.display='none';
+  document.getElementById('ob').style.display='none';
+  document.getElementById('atab').style.display='none';
+  setSP('connecting');
+}
+
+function showApp(){
+  document.getElementById('pg-login').classList.remove('on');
+  document.getElementById('pg-app').classList.add('on');
+  document.getElementById('ob').style.display='block';
+  const ini=user.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const uc=document.getElementById('uc');uc.style.display='flex';uc.className='uchip';
+  uc.innerHTML=`<div class="av">${ini}</div><span>${user}</span>`;
+  if(isAdmin)document.getElementById('atab').style.display='flex';
+  startListeners();
+  go(document.querySelector('[data-p="predict"]'),'predict');
+}
+
+function go(btn,pg){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  document.querySelectorAll('#pg-app .pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById('sub-'+pg).classList.add('on');
+  if(pg==='lb')renderLB();
+  else if(pg==='card')renderCard(user);
+  else if(pg==='admin')buildGrid('agrid','admin');
+  else if(pg==='predict'){buildGrid('pgrid','predict');updatePP()}
+}
+
+function renderCurrent(){
+  const on=document.querySelector('#pg-app .pg.on');if(!on)return;
+  const id=on.id.replace('sub-','');
+  if(id==='lb')renderLB();
+  else if(id==='card')renderCard(user);
+  else if(id==='predict'){buildGrid('pgrid','predict');updatePP()}
+  else if(id==='admin')buildGrid('agrid','admin');
+}
+
+function buildGrid(cid,mode){
+  const c=document.getElementById(cid);if(!c)return;c.innerHTML='';
+  const myp=mode==='predict'?(allPreds[user.replace(/[^a-zA-Z0-9]/g,'_')]||{}):null;
+  Object.entries(GROUPS).forEach(([g,teams])=>{
+    const card=document.createElement('div');card.className='gc';
+    card.innerHTML=`<div class="glbl">Group ${g}</div>`;
+    pairs(teams).forEach(([t1,t2])=>{
+      const key=mk(g,t1,t2);
+      const res=results[key];
+      const stored=mode==='predict'?myp[key]:res;
+      const locked=mode==='predict'&&!!res;
+      const hv=stored?stored.h:'', av=stored?stored.a:'';
+      const cls=(v,lk)=>'si'+(v!==''?' filled':'')+(lk?' locked':'');
+      const row=document.createElement('div');row.className='mr';
+      row.innerHTML=`<span class="tn" title="${t1}">${fl(t1)}${t1}</span>
+        <input class="${cls(hv,locked)}" type="number" min="0" max="20" id="${mode}-h-${key}" value="${hv}" placeholder="–" ${locked?'readonly':''}>
+        <span class="vs">v</span>
+        <input class="${cls(av,locked)}" type="number" min="0" max="20" id="${mode}-a-${key}" value="${av}" placeholder="–" ${locked?'readonly':''}>
+        <span class="tn r" title="${t2}">${t2} ${fl(t2)}</span>`;
+      if(!locked&&mode==='predict')row.querySelectorAll('input').forEach(i=>i.addEventListener('input',e=>{e.target.classList.toggle('filled',e.target.value!=='');updatePP()}));
+      card.appendChild(row);
+    });
+    c.appendChild(card);
+  });
+}
+
+function updatePP(){
+  let n=0;
+  Object.entries(GROUPS).forEach(([g,t])=>pairs(t).forEach(([t1,t2])=>{
+    const h=document.getElementById('predict-h-'+mk(g,t1,t2))?.value;
+    const a=document.getElementById('predict-a-'+mk(g,t1,t2))?.value;
+    if(h!==''&&a!=='')n++;
+  }));
+  const el=document.getElementById('pp');
+  if(el)el.innerHTML=`<strong>${n}</strong> / 72 predicted`;
+}
+
+async function savePreds(){
+  if(!user)return;
+  const ukey=user.replace(/[^a-zA-Z0-9]/g,'_');
+  const ex={...(allPreds[ukey]||{})};
+  Object.entries(GROUPS).forEach(([g,t])=>pairs(t).forEach(([t1,t2])=>{
+    const key=mk(g,t1,t2);
+    if(results[key])return;
+    const h=document.getElementById('predict-h-'+key)?.value;
+    const a=document.getElementById('predict-a-'+key)?.value;
+    if(h!==''&&a!=='')ex[key]={h:parseInt(h),a:parseInt(a)};
+  }));
+  try{
+    await db.ref('preds/'+ukey).set(ex);
+    showFlash('pok','Predictions saved — everyone can see your entry!');
+    updatePP();
+  }catch(e){showErr('perr','Save failed. Check your connection.')}
+}
+
+async function saveResults(){
+  if(!isAdmin)return;
+  const ex={...results};
+  Object.entries(GROUPS).forEach(([g,t])=>pairs(t).forEach(([t1,t2])=>{
+    const key=mk(g,t1,t2);
+    const h=document.getElementById('admin-h-'+key)?.value;
+    const a=document.getElementById('admin-a-'+key)?.value;
+    if(h!==''&&a!=='')ex[key]={h:parseInt(h),a:parseInt(a)};
+  }));
+  try{
+    await db.ref('results').set(ex);
+    await db.ref('lastUpdated').set(new Date().toISOString());
+    showFlash('aok','Results saved — leaderboard updated for everyone instantly!');
+  }catch(e){showErr('aok','Save failed. Check your connection.')}
+}
+
+function calcPts(pred,res){
+  if(!pred||!res)return null;
+  const{h:ph,a:pa}=pred,{h:rh,a:ra}=res;
+  if(ph===rh&&pa===ra)return 3;
+  return(ph>pa?1:ph<pa?-1:0)===(rh>ra?1:rh<ra?-1:0)?1:0;
+}
+
+function calcScore(ukey){
+  const p=allPreds[ukey]||{};
+  let pt=0,ex=0,cor=0,pl=0;const det={};
+  Object.entries(GROUPS).forEach(([g,t])=>{
+    det[g]=[];
+    pairs(t).forEach(([t1,t2])=>{
+      const key=mk(g,t1,t2),res=results[key];
+      if(!res)return;
+      pl++;
+      const s=calcPts(p[key],res);
+      if(s===3)ex++;if(s>=1)cor++;pt+=(s||0);
+      det[g].push({t1,t2,pred:p[key],res,pts:s});
+    });
+  });
+  return{pt,ex,cor,pl,det};
+}
+
+function renderLB(){
+  const pl=Object.keys(results).length;
+  const rows=players.map(n=>({name:n,...calcScore(n.replace(/[^a-zA-Z0-9]/g,'_'))}))
+    .sort((a,b)=>b.pt-a.pt||b.ex-a.ex||b.cor-a.cor);
+  const sg=document.getElementById('lbsg'),ts=document.getElementById('lbts'),body=document.getElementById('lbbody');
+  if(ts)ts.textContent='Last updated: '+fmtTs(lastUp);
+  if(sg)sg.innerHTML=`
+    <div class="scard"><div class="slbl">Players</div><div class="sval">${players.length}</div></div>
+    <div class="scard"><div class="slbl">Matches played</div><div class="sval">${pl}<span style="font-size:13px;font-weight:400;color:var(--t3)">/72</span></div><div class="pbar"><div class="pfill" style="width:${Math.round(pl/72*100)}%"></div></div></div>
+    <div class="scard"><div class="slbl">Leader</div><div class="sval" style="font-size:16px;margin-top:2px">${rows[0]?.name||'–'}</div><div class="ssub">${rows[0]?.pt||0} pts</div></div>
+    <div class="scard"><div class="slbl">Max score</div><div class="sval">216</div><div class="ssub">pts (3 × 72 games)</div></div>`;
+  if(!rows.length){body.innerHTML='<div class="empty"><i class="ti ti-users"></i>No entries yet — share the link so your team can join!</div>';return}
+  let h=`<div class="lbwrap"><div class="lbhd"><span style="text-align:center">#</span><span>Player</span><span style="text-align:center">Points</span><span style="text-align:center">Exact</span><span style="text-align:center">Result</span><span style="text-align:center">Predicted</span></div>`;
+  rows.forEach((r,i)=>{
+    const med=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const tc=i===0?' p1':i===1?' p2':i===2?' p3':'';
+    const me=r.name===user;
+    const pc=Object.keys(allPreds[r.name.replace(/[^a-zA-Z0-9]/g,'_')]||{}).length;
+    h+=`<div class="lbr${tc}${me?' me':''}" onclick="viewCard('${r.name.replace(/'/g,"\\'")}')">
+      <span class="rkcell">${med||(i+1)}</span>
+      <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis${me?';color:var(--gold2)':''}">${me?'<i class="ti ti-arrow-right" style="font-size:10px;margin-right:3px;opacity:.6"></i>':''}${r.name}</span>
+      <span class="ptcell">${r.pt}</span>
+      <span class="subcell"><span class="bdg bg">${r.ex}</span></span>
+      <span class="subcell"><span class="bdg bb">${r.cor}</span></span>
+      <span class="subcell" style="font-size:11px;color:var(--t3)">${pc}/72</span>
+    </div>`;
+  });
+  h+='</div>';body.innerHTML=h;
+}
+
+function viewCard(name){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.querySelector('[data-p="card"]').classList.add('on');
+  document.querySelectorAll('#pg-app .pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById('sub-card').classList.add('on');
+  renderCard(name);
+}
+
+function renderCard(name){
+  const ukey=name.replace(/[^a-zA-Z0-9]/g,'_');
+  const s=calcScore(ukey),isMe=name===user;
+  const sg=document.getElementById('scsg'),body=document.getElementById('scbody');
+  sg.innerHTML=`
+    <div class="scard"><div class="slbl">${isMe?'Your points':name+"'s pts"}</div><div class="sval">${s.pt}</div></div>
+    <div class="scard"><div class="slbl">Exact <span class="bdg bg" style="font-size:9px">3pts</span></div><div class="sval">${s.ex}</div></div>
+    <div class="scard"><div class="slbl">Result <span class="bdg bb" style="font-size:9px">1pt</span></div><div class="sval">${s.cor}</div></div>
+    <div class="scard"><div class="slbl">Scored</div><div class="sval">${s.pl}<span style="font-size:13px;font-weight:400;color:var(--t3)">/72</span></div></div>`;
+  let h='';
+  if(!isMe)h+=`<div class="alert-gold" style="margin-bottom:.85rem"><i class="ti ti-user"></i> Viewing <strong>${name}</strong> — predictions hidden, results and points shown.</div>`;
+  let any=false;
+  Object.entries(GROUPS).forEach(([g])=>{
+    const gm=s.det[g]||[];if(!gm.length)return;any=true;
+    h+=`<div class="scgrp"><div class="glbl" style="margin-bottom:6px">Group ${g}</div>`;
+    gm.forEach(({t1,t2,pred,res,pts:p})=>{
+      const ps=isMe?(pred?`<strong style="color:var(--t2)">${pred.h}–${pred.a}</strong>`:'<span style="color:var(--t3)">–</span>'):'';
+      const b=p===3?'<span class="bdg bg">+3</span>':p===1?'<span class="bdg bb">+1</span>':p===0?'<span class="bdg bgr">0</span>':'<span class="bdg bgr">–</span>';
+      h+=`<div class="scm"><span>${fl(t1)}${t1} v ${t2}${fl(t2)}</span><span style="text-align:center;font-size:11px;color:var(--t3)">${isMe?'pred: '+ps:''}</span><span style="text-align:center;font-weight:700">${res.h}–${res.a}</span><span style="text-align:right">${b}</span></div>`;
+    });
+    h+='</div>';
+  });
+  if(!any)h='<div class="empty"><i class="ti ti-ball-football"></i>No results yet — check back after matches are played.</div>';
+  body.innerHTML=h;
+}
+
+document.getElementById('ln').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lp').focus()});
+document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+</body>
+</html>
